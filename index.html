@@ -1,1 +1,80 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>.</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
 
+<script>
+  // ====== CONFIG ======
+  const INSTANT_FORM_URL = "https://vm.tiktok.com/XXXXXXXX/"; // link-ul tau de spark/form
+  const REDIRECT_URL     = "https://site-ul-tau.com/pagina";   // unde trimiti dupa exit
+  const REDIRECT_DELAY   = 300; // ms
+  // ====================
+
+  let formOpened = false;
+  let redirected = false;
+
+  function openForm() {
+    formOpened = true;
+    window.open(INSTANT_FORM_URL, "_blank");
+  }
+
+  function doRedirect() {
+    if (redirected) return;
+    redirected = true;
+    setTimeout(() => {
+      window.location.replace(REDIRECT_URL);
+    }, REDIRECT_DELAY);
+  }
+
+  // detecteaza cand userul revine pe tab (a iesit din form)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && formOpened) {
+      doRedirect();
+    }
+  });
+
+  // fallback focus
+  window.addEventListener("focus", () => {
+    if (formOpened) doRedirect();
+  });
+
+  // fallback iOS Safari / webview
+  window.addEventListener("pageshow", () => {
+    if (formOpened) doRedirect();
+  });
+
+  // deschide form-ul la load
+  window.addEventListener("load", () => {
+    setTimeout(openForm, 500);
+  });
+
+  // fallback: daca window.open e blocat (fara user gesture in unele webview-uri)
+  // afiseaza un buton invizibil care triggeraza manual
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      if (!formOpened) {
+        const btn = document.createElement("div");
+        btn.style.cssText = "position:fixed;inset:0;z-index:9999;cursor:pointer;";
+        btn.addEventListener("click", openForm, { once: true });
+        document.body.appendChild(btn);
+      }
+    }, 600);
+  });
+</script>
+
+</body>
+</html>
