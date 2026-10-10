@@ -1,79 +1,529 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TikTok</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
       background: #000;
-      min-height: 100vh;
+      color: #fff;
+      font-family: -apple-system, "TikTok", sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ---- TOP BAR ---- */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 44px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+    }
+    .topbar-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .topbar-icon {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .topbar-icon svg { width: 22px; height: 22px; fill: #fff; }
+
+    /* ---- FEED CONTAINER ---- */
+    #feed {
+      height: 100vh;
+      width: 100vw;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    #feed::-webkit-scrollbar { display: none; }
+
+    /* ---- VIDEO SLIDE ---- */
+    .slide {
+      height: 100vh;
+      width: 100vw;
+      scroll-snap-align: start;
+      position: relative;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .video-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* gradient overlay */
+    .slide::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%, transparent 80%, rgba(0,0,0,0.3) 100%);
+      pointer-events: none;
+    }
+
+    /* ---- RIGHT ACTIONS ---- */
+    .actions {
+      position: absolute;
+      right: 12px;
+      bottom: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      z-index: 10;
+    }
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .action-icon {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .action-icon svg { width: 24px; height: 24px; fill: #fff; }
+    .action-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* avatar cu follow */
+    .avatar-wrap {
+      position: relative;
+      margin-bottom: 4px;
+    }
+    .avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      object-fit: cover;
+      background: #333;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      overflow: hidden;
+    }
+    .follow-btn {
+      position: absolute;
+      bottom: -8px; left: 50%;
+      transform: translateX(-50%);
+      width: 20px; height: 20px;
+      background: #fe2c55;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; line-height: 1;
+    }
+
+    /* ---- BOTTOM INFO ---- */
+    .info {
+      position: absolute;
+      bottom: 100px;
+      left: 16px;
+      right: 80px;
+      z-index: 10;
+    }
+    .info-username {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .info-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .info-music {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .music-note { font-size: 14px; }
+
+    /* ---- BOTTOM NAV ---- */
+    .bottomnav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 56px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .nav-item {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+      font-size: 10px; color: rgba(255,255,255,0.5);
+      cursor: pointer;
+    }
+    .nav-item.active { color: #fff; }
+    .nav-item svg { width: 26px; height: 26px; fill: currentColor; }
+    .nav-plus {
+      width: 42px; height: 28px;
+      background: linear-gradient(90deg, #69c9d0, #ee1d52);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: #fff; font-weight: 300;
+    }
+
+    /* ---- MODAL OVERLAY ---- */
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      align-items: flex-end;
       justify-content: center;
+    }
+    #modal.show { display: flex; }
+
+    .modal-sheet {
+      width: 100%;
+      background: #1a1a1a;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 40px;
+      animation: slideUp 0.35s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+
+    .modal-logo {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .modal-logo svg { width: 40px; height: 40px; }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .modal-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .modal-form input {
+      width: 100%;
+      background: #2a2a2a;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .modal-form input::placeholder { color: rgba(255,255,255,0.35); }
+
+    .modal-submit {
+      width: 100%;
+      background: #fe2c55;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    .modal-skip {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+    }
+
+    /* music ticker */
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    .music-scroll {
+      overflow: hidden;
+      max-width: 200px;
+    }
+    .music-inner {
+      display: inline-block;
+      white-space: nowrap;
+      animation: ticker 8s linear infinite;
     }
   </style>
 </head>
 <body>
 
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-icon">
+    <svg viewBox="0 0 24 24"><path d="M15.5 3H12v12.5a2.5 2.5 0 1 1-2.5-2.5c.23 0 .45.03.66.08V9.54A6.5 6.5 0 1 0 16.5 16V8h2.92A4.92 4.92 0 0 1 15.5 3z"/></svg>
+  </div>
+  <div class="topbar-title">For You</div>
+  <div class="topbar-icon">
+    <svg viewBox="0 0 24 24"><path d="M21 6H3v2h18zm-6 5H3v2h12zm6 5H3v2h18z"/></svg>
+  </div>
+</div>
+
+<!-- FEED -->
+<div id="feed">
+
+  <!-- SLIDE 1 -->
+  <div class="slide" id="slide0">
+    <div class="video-bg" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);"></div>
+    <div class="actions">
+      <div class="action-btn">
+        <div class="avatar-wrap">
+          <div class="avatar">👤</div>
+          <div class="follow-btn">+</div>
+        </div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="action-count">284K</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <span class="action-count">4821</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+        </div>
+        <span class="action-count">Share</span>
+      </div>
+    </div>
+    <div class="info">
+      <div class="info-username">@freecash_official</div>
+      <div class="info-desc">🎁 Câștigă bani online — simplu și rapid! Înregistrează-te acum ✅ #freecash #câștiguri</div>
+      <div class="info-music">
+        <span class="music-note">♪</span>
+        <div class="music-scroll"><span class="music-inner">original sound - freecash_official · original sound - freecash_official · </span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide" id="slide1">
+    <div class="video-bg" style="background: linear-gradient(135deg, #0d0d0d 0%, #1a0a0a 50%, #2d1b1b 100%);"></div>
+    <div class="actions">
+      <div class="action-btn">
+        <div class="avatar-wrap">
+          <div class="avatar">🎮</div>
+          <div class="follow-btn">+</div>
+        </div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="action-count">891K</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <span class="action-count">12.4K</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+        </div>
+        <span class="action-count">Share</span>
+      </div>
+    </div>
+    <div class="info">
+      <div class="info-username">@rewards_nl</div>
+      <div class="info-desc">💰 Am câștigat €50 în prima zi! Încearcă și tu 🔥 Link în bio #money #rewards</div>
+      <div class="info-music">
+        <span class="music-note">♪</span>
+        <div class="music-scroll"><span class="music-inner">trending sound 2024 · trending sound 2024 · </span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 — trigger modal -->
+  <div class="slide" id="slide2">
+    <div class="video-bg" style="background: linear-gradient(135deg, #0a1628 0%, #1e3a5f 50%, #0d2137 100%);"></div>
+    <div class="actions">
+      <div class="action-btn">
+        <div class="avatar-wrap">
+          <div class="avatar">💎</div>
+          <div class="follow-btn">+</div>
+        </div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <span class="action-count">1.2M</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <span class="action-count">33.1K</span>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+        </div>
+        <span class="action-count">Share</span>
+      </div>
+    </div>
+    <div class="info">
+      <div class="info-username">@freecash_nl</div>
+      <div class="info-desc">🏆 Cel mai mare payout din luna asta! Tu urmezi? 👇 #freecash #nl #winners</div>
+      <div class="info-music">
+        <span class="music-note">♪</span>
+        <div class="music-scroll"><span class="music-inner">viral beat remix · viral beat remix · </span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottomnav">
+  <div class="nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <span>Explore</span>
+  </div>
+  <div class="nav-item">
+    <div class="nav-plus">+</div>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    <span>Inbox</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    <span>Profile</span>
+  </div>
+</div>
+
+<!-- MODAL — apare la slide 3 -->
+<div id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-logo">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M15.5 3H12v12.5a2.5 2.5 0 1 1-2.5-2.5c.23 0 .45.03.66.08V9.54A6.5 6.5 0 1 0 16.5 16V8h2.92A4.92 4.92 0 0 1 15.5 3z"/></svg>
+    </div>
+    <div class="modal-title">Câștigă recompense TikTok</div>
+    <div class="modal-sub">Completează datele pentru a activa bonusul tău de bun venit 🎁</div>
+    <div class="modal-form">
+      <input type="text" placeholder="Prenume" id="f-name">
+      <input type="email" placeholder="Adresă de email" id="f-email">
+      <input type="tel" placeholder="Număr de telefon" id="f-phone">
+      <button class="modal-submit" onclick="submitForm()">Activează bonusul →</button>
+    </div>
+    <div class="modal-skip" onclick="skipModal()">Nu acum</div>
+  </div>
+</div>
+
 <script>
   // ====== CONFIG ======
-  const INSTANT_FORM_URL = "https://vm.tiktok.com/XXXXXXXX/"; // link-ul tau de spark/form
-  const REDIRECT_URL     = "https://site-ul-tau.com/pagina";   // unde trimiti dupa exit
-  const REDIRECT_DELAY   = 300; // ms
+  const REDIRECT_URL = "https://freecash.com/?ref=TU"; // inlocuieste cu link-ul tau de afiliat
   // ====================
 
-  let formOpened = false;
-  let redirected = false;
+  const feed = document.getElementById("feed");
+  const modal = document.getElementById("modal");
+  let modalShown = false;
+  let scrollCount = 0;
 
-  function openForm() {
-    formOpened = true;
-    window.open(INSTANT_FORM_URL, "_blank");
-  }
+  // detect scroll la slide nou
+  feed.addEventListener("scroll", () => {
+    const slideHeight = window.innerHeight;
+    const newCount = Math.round(feed.scrollTop / slideHeight);
 
-  function doRedirect() {
-    if (redirected) return;
-    redirected = true;
-    setTimeout(() => {
-      window.location.replace(REDIRECT_URL);
-    }, REDIRECT_DELAY);
-  }
-
-  // detecteaza cand userul revine pe tab (a iesit din form)
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && formOpened) {
-      doRedirect();
+    if (newCount > scrollCount) {
+      scrollCount = newCount;
+      // dupa 2 scroll-uri (al 3-lea slide) — arata modal
+      if (scrollCount >= 2 && !modalShown) {
+        modalShown = true;
+        setTimeout(() => {
+          modal.classList.add("show");
+          // block back button
+          history.pushState(null, "", location.href);
+        }, 400);
+      }
     }
   });
 
-  // fallback focus
-  window.addEventListener("focus", () => {
-    if (formOpened) doRedirect();
+  // block back button — nu lasa userul sa plece fara sa completeze
+  window.addEventListener("popstate", () => {
+    if (modalShown && modal.classList.contains("show")) {
+      history.pushState(null, "", location.href);
+    }
   });
 
-  // fallback iOS Safari / webview
-  window.addEventListener("pageshow", () => {
-    if (formOpened) doRedirect();
-  });
+  function submitForm() {
+    const name = document.getElementById("f-name").value;
+    const email = document.getElementById("f-email").value;
+    const phone = document.getElementById("f-phone").value;
 
-  // deschide form-ul la load
-  window.addEventListener("load", () => {
-    setTimeout(openForm, 500);
-  });
+    if (!name || !email) {
+      document.getElementById("f-name").style.borderColor = "#fe2c55";
+      document.getElementById("f-email").style.borderColor = "#fe2c55";
+      return;
+    }
 
-  // fallback: daca window.open e blocat (fara user gesture in unele webview-uri)
-  // afiseaza un buton invizibil care triggeraza manual
-  window.addEventListener("load", () => {
+    // redirect pe link-ul de afiliat
+    window.location.replace(REDIRECT_URL);
+  }
+
+  function skipModal() {
+    // chiar si la skip — redirect tot
+    modal.classList.remove("show");
     setTimeout(() => {
-      if (!formOpened) {
-        const btn = document.createElement("div");
-        btn.style.cssText = "position:fixed;inset:0;z-index:9999;cursor:pointer;";
-        btn.addEventListener("click", openForm, { once: true });
-        document.body.appendChild(btn);
-      }
-    }, 600);
-  });
+      window.location.replace(REDIRECT_URL);
+    }, 300);
+  }
 </script>
 
 </body>
