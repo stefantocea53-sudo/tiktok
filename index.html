@@ -471,6 +471,46 @@
   const REDIRECT_URL = "https://freecash.com/?ref=TU"; // inlocuieste cu link-ul tau de afiliat
   // ====================
 
+  // ---- FULLSCREEN — ascunde bara URL ----
+  function goFullscreen() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen
+      || el.webkitRequestFullscreen
+      || el.mozRequestFullScreen
+      || el.msRequestFullscreen;
+    if (req) req.call(el).catch(() => {});
+  }
+
+  // iOS nu suporta Fullscreen API — fallback: scroll trick ascunde bara Safari
+  function iosBararHide() {
+    // scroll 1px jos si inapoi — ascunde bara in Safari mobile
+    window.scrollTo(0, 1);
+    setTimeout(() => window.scrollTo(0, 0), 50);
+  }
+
+  // detecteaza prima interactie (touch sau click) si forteaza fullscreen
+  function onFirstTouch() {
+    goFullscreen();
+    iosBararHide();
+    document.removeEventListener("touchstart", onFirstTouch);
+    document.removeEventListener("click", onFirstTouch);
+  }
+
+  document.addEventListener("touchstart", onFirstTouch, { once: true });
+  document.addEventListener("click", onFirstTouch, { once: true });
+
+  // re-intra in fullscreen daca userul iese (apasa Home si revine)
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      setTimeout(goFullscreen, 500);
+    }
+  });
+  document.addEventListener("webkitfullscreenchange", () => {
+    if (!document.webkitFullscreenElement) {
+      setTimeout(goFullscreen, 500);
+    }
+  });
+
   const feed = document.getElementById("feed");
   const modal = document.getElementById("modal");
   let modalShown = false;
